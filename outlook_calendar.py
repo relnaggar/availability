@@ -109,7 +109,7 @@ class OutlookCalendar:
     }
     print("Requesting access token")
     start_time = time.time()
-    response = requests.post(token_url, headers=headers, data=data, timeout=1)
+    response = requests.post(token_url, headers=headers, data=data, timeout=10)
     print(response.status_code)
     response_json = response.json()
     # print('Received', response_json)
@@ -144,7 +144,7 @@ class OutlookCalendar:
     query_url = f"https://graph.microsoft.com/v1.0/users/{urllib.parse.quote(self.user_principal_name)}/calendars"
     print("Requesting list of calendars")  
     print("query_url:",query_url)
-    response = requests.get(query_url, headers=headers, timeout=1)
+    response = requests.get(query_url, headers=headers, timeout=10)
     print(response.status_code)
     print("")
 
@@ -184,7 +184,7 @@ class OutlookCalendar:
     datas = []
     while querying:
       print("query_url:",query_url)
-      response = requests.get(query_url, headers=headers, timeout=1)
+      response = requests.get(query_url, headers=headers, timeout=10)
       print(response.status_code)
       print("")
 

@@ -11,6 +11,10 @@ EVENTS_PATH = f"{CACHE_PATH}/events.json"
 USER_PRINCIPAL_NAME = "ramsey.el-naggar@outlook.com"
 TARGET_CALENDAR_NAMES = ["Calendar", "Tutoring"]
 
+WORKDAYS = [1,2,3,4,5,6]
+START_WORK_TIME = datetime.time(hour=15, minute=0)
+END_WORK_TIME = datetime.time(hour=21, minute=0)
+
 
 def create_cache_directory():
   import os
@@ -51,7 +55,7 @@ def main():
   create_cache_directory()
 
   now = datetime.datetime.now()
-  end_of_next_week = (now + datetime.timedelta(days=(14 - now.isoweekday()))).replace(hour=23, minute=59, second=59)
+  end_of_next_week = (now + datetime.timedelta(days=14)).replace(hour=23, minute=59, second=59)
 
   start_datetime = now
   end_datetime = end_of_next_week
@@ -62,10 +66,6 @@ def main():
   for event in events:
     event["startDateTime"] = datetime.datetime.fromisoformat(event["startDateTime"])
     event["endDateTime"] = datetime.datetime.fromisoformat(event["endDateTime"])
-
-  workdays = list(range(1,4+1))
-  start_work_time = datetime.time(hour=12, minute=0)
-  end_work_time = datetime.time(hour=20, minute=0)
 
   valid = False
   while not valid:
@@ -88,17 +88,17 @@ def main():
   current_date = today_date
   availabile_hours = []
   while current_date <= end_date:
-    if current_date.isoweekday() in workdays:
+    if current_date.isoweekday() in WORKDAYS:
       if current_date == today_date:
         start_of_next_hour_datetime = (start_datetime.replace(minute=0, second=0, microsecond=0) + datetime.timedelta(hours=1))
         start_hour_datetime = start_of_next_hour_datetime
       else:
-        start_hour_datetime = datetime.datetime.combine(current_date, start_work_time)
+        start_hour_datetime = datetime.datetime.combine(current_date, START_WORK_TIME)
       current_hour_datetime = start_hour_datetime
       # print("hour",current_hour_datetime)
-      while current_hour_datetime.time() < end_work_time and current_hour_datetime < end_datetime:
+      while current_hour_datetime.time() < END_WORK_TIME and current_hour_datetime < end_datetime:
         end_current_hour_datetime = current_hour_datetime+meeting_duration
-        if start_work_time <= current_hour_datetime.time() and end_current_hour_datetime.time() <= end_work_time:
+        if START_WORK_TIME <= current_hour_datetime.time() and end_current_hour_datetime.time() <= END_WORK_TIME:
           while current_hour_datetime >= events[event_number]["endDateTime"] and event_number < len(events)-1:
             event_number += 1
             # print("event",events[event_number])
