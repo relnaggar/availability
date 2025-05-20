@@ -51,6 +51,17 @@ def is_overlap(start_datetime_1, end_datetime_1, start_datetime_2, end_datetime_
   earliest_end = min(end_datetime_1, end_datetime_2)
   return latest_start < earliest_end
 
+def format_availability(availability_by_date, actual_meeting_duration, timezone):
+  availability = f"Current availability for a {int(actual_meeting_duration.total_seconds() // 60)}-minute session ({timezone} local time):"
+  for date in sorted(availability_by_date.keys()):
+    availability += "\n"
+    availability += date.strftime(f"%A {date.day}{get_ordinal_suffix(date.day)} %B: ")
+    for hour_datetime in availability_by_date[date][:-1]:
+      availability += hour_datetime.strftime("%H:%M") + "-" + (hour_datetime+actual_meeting_duration).strftime("%H:%M") + ", "
+    hour_datetime = availability_by_date[date][-1]
+    availability += hour_datetime.strftime("%H:%M") + "-" + (hour_datetime+actual_meeting_duration).strftime("%H:%M")
+  return availability
+
 def main():
   create_cache_directory()
 
@@ -68,9 +79,10 @@ def main():
     event["endDateTime"] = datetime.datetime.fromisoformat(event["endDateTime"])
 
   valid = False
+  meeting_type = ""
   while not valid:
     meeting_type = input("Meeting type (1: 55-minute lesson, 2: 15-minute meeting): ")
-    if meeting_type == "1" or meeting_type == "2":
+    if meeting_type in ["1", "2"]:
       valid = True
     else:
       print("Invalid meeting type")
@@ -115,15 +127,24 @@ def main():
       availability_by_date[date].append(hour_datetime)
     else:
       availability_by_date[date] = [hour_datetime]
+  
+  timezones = {"1": "UK", "2": "Spain"}
+  timezone_input = ""
+  valid = False
+  while valid == False:
+    timezone_input = input("UK time or Spain time (1: UK, 2: Spain): ")
+    if timezone_input in timezones:
+      valid = True
+    else:
+      print("Invalid timezone")
 
-  availability = f"Current availability for a {int(actual_meeting_duration.total_seconds() // 60)}-minute session (UK local time):"
-  for date in sorted(availability_by_date.keys()):
-    availability += "\n"
-    availability += date.strftime(f"%A {date.day}{get_ordinal_suffix(date.day)} %B: ")
-    for hour_datetime in availability_by_date[date][:-1]:
-      availability += hour_datetime.strftime("%H:%M") + "-" + (hour_datetime+actual_meeting_duration).strftime("%H:%M") + ", "
-    hour_datetime = availability_by_date[date][-1]
-    availability += hour_datetime.strftime("%H:%M") + "-" + (hour_datetime+actual_meeting_duration).strftime("%H:%M")
+  timezone = timezones[timezone_input]
+  if timezone == "Spain":
+    for date in availability_by_date.keys():
+      for i in range(len(availability_by_date[date])):
+        availability_by_date[date][i] = availability_by_date[date][i] + datetime.timedelta(hours=1)
+
+  availability = format_availability(availability_by_date, actual_meeting_duration, timezone)
 
   print("")
   print(availability)
