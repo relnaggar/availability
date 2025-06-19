@@ -5,6 +5,7 @@ import urllib.parse
 
 def yesnoinput(prompt, default=None):
     valid = False
+    user_input = ""
     while valid == False:
       user_input = input("(" + ("Y" if default == "y" else "y") + "/" + ("N" if default == "n" else "n") + ") " + prompt)
       if user_input == "" and default is not None:
@@ -38,7 +39,7 @@ class OutlookCalendar:
       self.access_token = self.get_access_token(authorization_code)
 
     self.calendars = self.get_cached_calendars()
-    if self.calendars is None or yesnoinput("Use cached calendars? ", default="y") == "n":
+    if len(self.calendars) == 0 or yesnoinput("Use cached calendars? ", default="y") == "n":
       self.calendars = self.get_calendars()
 
   def get_cached_access_token(self):
@@ -56,7 +57,7 @@ class OutlookCalendar:
     import random
     import pyperclip
     import socket
-    
+
     state = random.randint(100,1000)
     authorize_url = f"https://login.microsoftonline.com/{self.TENANT_ID}/oauth2/v2.0/authorize?client_id={self.CLIENT_ID}&redirect_uri={urllib.parse.quote(self.REDIRECT_URI)}&scope={self.SCOPE}&response_type=code&response_mode=query&state={state}"
 
@@ -112,7 +113,9 @@ class OutlookCalendar:
     response = requests.post(token_url, headers=headers, data=data, timeout=10)
     print(response.status_code)
     response_json = response.json()
-    # print('Received', response_json)
+    if response.status_code != 200:
+      print("Error requesting access token:", response_json)
+      raise Exception("Failed to get access token")
     access_token = response_json["access_token"]
     expiry_time = start_time + response_json["expires_in"]
     print("Received access token")
@@ -128,7 +131,7 @@ class OutlookCalendar:
       return calendars
     except FileNotFoundError:
       pass
-    return None
+    return []
 
   def cache_calendars(self, calendars):
     with open(self.CALENDARS_PATH, "w") as f:

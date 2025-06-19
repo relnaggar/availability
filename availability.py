@@ -51,8 +51,8 @@ def is_overlap(start_datetime_1, end_datetime_1, start_datetime_2, end_datetime_
   earliest_end = min(end_datetime_1, end_datetime_2)
   return latest_start < earliest_end
 
-def format_availability(availability_by_date, actual_meeting_duration, timezone):
-  availability = f"Current availability for a {int(actual_meeting_duration.total_seconds() // 60)}-minute session ({timezone} local time):"
+def format_availability(availability_by_date, actual_meeting_duration, location):
+  availability = f"Current availability for a {int(actual_meeting_duration.total_seconds() // 60)}-minute session ({location} local time):"
   for date in sorted(availability_by_date.keys()):
     availability += "\n"
     availability += date.strftime(f"%A {date.day}{get_ordinal_suffix(date.day)} %B: ")
@@ -127,24 +127,24 @@ def main():
       availability_by_date[date].append(hour_datetime)
     else:
       availability_by_date[date] = [hour_datetime]
-  
-  timezones = {"1": "UK", "2": "Spain"}
-  timezone_input = ""
+
+  locations = {"UK": 0, "Spain": 1, "Chicago Daylight": -6, "Chicago Standard": -5}
+  location_input = ""
   valid = False
   while valid == False:
-    timezone_input = input("UK time or Spain time (1: UK, 2: Spain): ")
-    if timezone_input in timezones:
+    location_input = input(f"Location ({', '.join([f'{index+1}: {value}' for index, value in enumerate(locations.keys())])}): ")
+    if location_input in map(str, list(range(1, len(locations)+1))):
       valid = True
     else:
       print("Invalid timezone")
+  location = list(locations.keys())[int(location_input) - 1]
+  print(f"{location} time ({locations[location]} hour{'s' if locations[location] != 1 else ''} from UK time)")
 
-  timezone = timezones[timezone_input]
-  if timezone == "Spain":
-    for date in availability_by_date.keys():
-      for i in range(len(availability_by_date[date])):
-        availability_by_date[date][i] = availability_by_date[date][i] + datetime.timedelta(hours=1)
+  for date in availability_by_date.keys():
+    for i in range(len(availability_by_date[date])):
+      availability_by_date[date][i] = availability_by_date[date][i] + datetime.timedelta(hours=locations[location])
 
-  availability = format_availability(availability_by_date, actual_meeting_duration, timezone)
+  availability = format_availability(availability_by_date, actual_meeting_duration, location.split()[0])
 
   print("")
   print(availability)
