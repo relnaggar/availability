@@ -71,17 +71,17 @@ class OutlookCalendar:
       s.bind((self.HOST, self.PORT))
       s.listen()
       print(f"Server listening on {self.HOST}:{self.PORT}")
-      conn, addr = s.accept()  
+      conn, addr = s.accept()
       with conn:
         print('Connected by', addr)
-        data = conn.recv(4096)
-        # print('Received', repr(data))
-        code = str(data).split("&")
-        assert len(code)==2
-        assert code[1][:len("state="+str(state))] == "state="+str(state)
-        code = code[0].split("code=")
-        assert len(code)==2
-        authorization_code = code[1]
+        data = conn.recv(4096).decode('utf-8')
+        # Parse the GET request line to extract the path and query string
+        request_line = data.split('\r\n')[0]  # e.g. "GET /?code=...&state=926 HTTP/1.1"
+        path = request_line.split(' ')[1]      # e.g. "/?code=...&state=926"
+        query_string = path.split('?', 1)[1]
+        params = urllib.parse.parse_qs(query_string)
+        assert params.get('state', [None])[0] == str(state)
+        authorization_code = params['code'][0]
         print("Received authorization code")
     print("")
     return authorization_code
